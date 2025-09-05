@@ -70,6 +70,9 @@ class _AddUserDialogState extends State<AddUserDialog> {
 
             if (user.name.isNotEmpty && user.age > 0) {
               context.read<UserCubit>().addUser(user); // ✅ Cubit
+              // 🧹 On nettoie les champs
+              ctrName.clear();
+              ctrAge.clear();
               Navigator.pop(context);
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
