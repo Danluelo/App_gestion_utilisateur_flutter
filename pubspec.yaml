@@ -11,22 +11,33 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # HTTP pour consommer API REST
-  flutter_bloc: ^8.1.3
-  equatable: ^2.0.5   # <--- ajoute ça
-  http: ^1.2.2
+  # 📌 Gestion d'état (architecture BLoC)
+  flutter_bloc: ^8.1.3     # Gestion de l’état avec Cubit/BLoC
+  equatable: ^2.0.5        # Simplifie la comparaison des objets (utile pour les states)
 
-  # Firebase
-  firebase_core: ^4.1.0
-  cloud_firestore: ^6.0.1
+  # 🌍 API REST
+  http: ^1.2.2             # Requêtes HTTP (si besoin de consommer d’autres API)
 
-  # Icônes Cupertino (iOS style)
+  # 🔥 Firebase
+  firebase_core: ^4.1.0    # Base obligatoire pour initialiser Firebase
+  cloud_firestore: ^6.0.1  # Base de données Firestore (CRUD des utilisateurs)
+  firebase_storage: ^13.0.1 # Stockage des fichiers (photo de profil des utilisateurs)
+  # firebase_storage: ^12.0.1 # (⚠️ ancienne version qui causait des conflits)
+
+  # 📷 Gestion des images
+  image_picker: ^1.1.2     # Sélectionner une image (caméra / galerie)
+  path_provider: ^2.1.2    # Récupérer un répertoire local pour sauvegarde temporaire
+
+  # 📲 QR Code
+  qr_flutter: ^4.1.0       # Génération de QR Code pour chaque utilisateur
+
+  # 🎨 Icônes Cupertino (style iOS)
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^6.0.0    # Analyse statique du code (bonnes pratiques)
 
 flutter:
-  uses-material-design: true
+  uses-material-design: true # Active l’utilisation des Material Icons

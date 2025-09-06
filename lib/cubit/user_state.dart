@@ -20,6 +20,14 @@ class UserLoaded extends UserState {
   List<Object?> get props => [users];
 }
 
+class UserSearch extends UserState {
+  final List<User> filteredUsers;
+  const UserSearch(this.filteredUsers);
+
+  @override
+  List<Object?> get props => [filteredUsers];
+}
+
 class UserError extends UserState {
   final String message;
   const UserError(this.message);

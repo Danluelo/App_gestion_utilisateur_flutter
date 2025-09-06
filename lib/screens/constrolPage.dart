@@ -9,7 +9,7 @@ class ControlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3, // ✅ Nombre d’onglets
+      length: 4, // ✅ Nombre d’onglets
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.green,
@@ -29,6 +29,7 @@ class ControlePage extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.add)), // Ajouter
               Tab(icon: Icon(Icons.list)), // Liste
+              Tab(icon: Icon(Icons.qr_code)), // Liste
               Tab(icon: Icon(Icons.settings)), // Paramètres
             ],
           ),
@@ -65,7 +66,15 @@ class ControlePage extends StatelessWidget {
             // 🔹 Onglet 2 : liste des utilisateurs
             const AllUsers(),
 
+            const Center(
+              child: Text(
+                "Faites vos scan ici",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black54),
+              ),
+            ),
+
             // 🔹 Onglet 3 : paramètres
+
             const Center(
               child: Text(
                 "⚙️ Paramètres (en développement)",
