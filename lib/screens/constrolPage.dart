@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/presentation/widget/AddUserDialog.dart';
 import 'package:my_app/presentation/widget/all_user.dart';
+import 'package:my_app/presentation/widget/scan_page.dart';
 
 /// Page principale avec onglets (ajout, liste, paramètres)
 class ControlePage extends StatelessWidget {
@@ -66,12 +67,7 @@ class ControlePage extends StatelessWidget {
             // 🔹 Onglet 2 : liste des utilisateurs
             const AllUsers(),
 
-            const Center(
-              child: Text(
-                "Faites vos scan ici",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black54),
-              ),
-            ),
+            const ScanPage(),
 
             // 🔹 Onglet 3 : paramètres
 

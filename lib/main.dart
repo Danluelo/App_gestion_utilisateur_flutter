@@ -4,8 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:my_app/cubit/user_cubit.dart';
 import 'package:my_app/repository/userRepo.dart';
-// import 'package:my_app/repository/user_repository.dart';
-// import 'package:my_app/presentation/widget/controle_page.dart'; // ou pages/controle_page.dart
 import 'package:my_app/screens/constrolPage.dart';
 import 'firebase_options.dart';
 

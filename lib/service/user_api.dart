@@ -22,6 +22,8 @@ class UserApi {
           id: doc['name'].toString().split('/').last, // récupère l'ID Firestore
           name: fields['name']['stringValue'],
           age: int.parse(fields['age']['integerValue']),
+          photoUrl: fields['photoUrl']?['stringValue'] ?? "",
+          code: fields['code']?['stringValue'] ?? User.generateCode(fields['name']['stringValue'], int.parse(fields['age']['integerValue'])),
         );
       }).toList();
     } else {

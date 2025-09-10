@@ -1,4 +1,5 @@
-// lib/presentation/widget/all_user.dart
+ // lib/presentation/widget/all_user.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/cubit/user_cubit.dart';
@@ -27,9 +28,8 @@ class _AllUsersState extends State<AllUsers> {
         if (state is UserError) {
           final isNetwork =
               state.message.contains("network") || state.message.contains("host");
-          final msg = isNetwork
-              ? "Problème de connexion internet 🚫"
-              : state.message;
+          final msg =
+              isNetwork ? "Problème de connexion internet 🚫" : state.message;
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -55,7 +55,6 @@ class _AllUsersState extends State<AllUsers> {
                     foregroundColor: Colors.white,
                   ),
                 ),
-                
               ],
             ),
           );
@@ -65,12 +64,14 @@ class _AllUsersState extends State<AllUsers> {
           final users = state.users.where((user) {
             final name = user.name.toLowerCase();
             final age = user.age.toString();
-            return name.contains(_searchQuery) || age.contains(_searchQuery);
+            final code = user.code.toLowerCase();
+            return name.contains(_searchQuery) ||
+                age.contains(_searchQuery) ||
+                code.contains(_searchQuery);
           }).toList();
 
           return Column(
             children: [
-              // 🔎 Champ de recherche uniquement si data chargée
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
@@ -88,110 +89,118 @@ class _AllUsersState extends State<AllUsers> {
                   },
                 ),
               ),
-
-              // 📋 Liste filtrée
-              Expanded(
+               Expanded(
                 child: users.isEmpty
                     ? const Center(child: Text("Aucun utilisateur trouvé"))
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 8),
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
                         itemCount: users.length,
+                        separatorBuilder: (context, index) => const Divider(
+                          color: Color.fromARGB(255, 234, 234, 234),  // ligne grise
+                          thickness: 0.8,
+                          indent: 12, // marge à gauche
+                          endIndent: 12, // marge à droite
+                        ),
                         itemBuilder: (context, index) {
                           final user = users[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 6, horizontal: 4),
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+
+                          ImageProvider? imageProvider;
+                          if (user.photoUrl.isNotEmpty) {
+                            if (user.photoUrl.startsWith("http")) {
+                              imageProvider = NetworkImage(user.photoUrl);
+                            } else {
+                              imageProvider = FileImage(File(user.photoUrl));
+                            }
+                          }
+
+                          return ListTile(
+                            dense: true,
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            leading: CircleAvatar(
+                              radius: 26,
+                              backgroundColor: Colors.grey.shade300,
+                              backgroundImage: imageProvider,
+                              child: imageProvider == null
+                                  ? Text(
+                                      user.name.isNotEmpty
+                                          ? user.name
+                                              .trim()
+                                              .split(" ")
+                                              .take(2)
+                                              .map((e) => e[0].toUpperCase())
+                                              .join()
+                                          : "?",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    )
+                                  : null,
                             ),
-                            child: ListTile(
-                              dense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              leading: CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Colors.green,
-                                child: Text(
-                                  user.name.isNotEmpty
-                                      ? user.name
-                                          .trim()
-                                          .split(" ")
-                                          .take(2)
-                                          .map((e) =>
-                                              e[0].toUpperCase())
-                                          .join()
-                                      : "?",
+                            title: Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Âge : ${user.age}",
                                   style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
                                     fontSize: 14,
+                                    color: Colors.black54,
                                   ),
                                 ),
-                              ),
-                              title: Text(
-                                user.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18,
+                                Text(
+                                  "Code : ${user.code}",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.blue,
+                                  ),
                                 ),
-                              ),
-                              subtitle: Text(
-                                "Âge : ${user.age}",
-                                style: const TextStyle(
-                                    fontSize: 16, color: Colors.black54),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Modifier
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(Icons.edit_note,
-                                          color: Colors.green, size: 24),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) =>
-                                              EditUserDialog(user: user),
-                                        );
-                                      },
-                                    ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit_note,
+                                    color: Colors.green,
+                                    size: 24,
                                   ),
-                                  const SizedBox(width: 10),
-                                  // Supprimer
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                          Icons.delete_forever_rounded,
-                                          color: Colors.red,
-                                          size: 24),
-                                      onPressed: () async {
-                                        final confirmed =
-                                            await confirmDeleteUser(context);
-                                        if (confirmed == true) {
-                                          context
-                                              .read<UserCubit>()
-                                              .deleteUser(user.id);
-                                        }
-                                      },
-                                    ),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => EditUserDialog(user: user),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_forever_rounded,
+                                    color: Colors.red,
+                                    size: 24,
                                   ),
-                                ],
-                              ),
+                                  onPressed: () async {
+                                    final confirmed = await confirmDeleteUser(context);
+                                    if (confirmed == true) {
+                                      context.read<UserCubit>().deleteUser(user.id);
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
                           );
                         },
                       ),
-              ),
+              )
+
             ],
           );
         }
