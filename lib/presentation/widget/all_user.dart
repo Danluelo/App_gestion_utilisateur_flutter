@@ -8,7 +8,14 @@ import 'package:my_app/service/edit_user_dialog.dart';
 import 'package:my_app/service/delete_user_confirm.dart';
 
 class AllUsers extends StatefulWidget {
-  const AllUsers({super.key});
+  final bool canEdit;
+  final bool canDelete;
+
+  const AllUsers({
+    super.key,
+    this.canEdit = true,   // par défaut superadmin/admin peuvent modifier
+    this.canDelete = true, // par défaut superadmin peut supprimer
+  });
 
   @override
   State<AllUsers> createState() => _AllUsersState();
@@ -89,28 +96,26 @@ class _AllUsersState extends State<AllUsers> {
                   },
                 ),
               ),
-               Expanded(
+              Expanded(
                 child: users.isEmpty
                     ? const Center(child: Text("Aucun utilisateur trouvé"))
                     : ListView.separated(
                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
                         itemCount: users.length,
                         separatorBuilder: (context, index) => const Divider(
-                          color: Color.fromARGB(255, 234, 234, 234),  // ligne grise
+                          color: Color.fromARGB(255, 234, 234, 234),
                           thickness: 0.8,
-                          indent: 12, // marge à gauche
-                          endIndent: 12, // marge à droite
+                          indent: 12,
+                          endIndent: 12,
                         ),
                         itemBuilder: (context, index) {
                           final user = users[index];
 
                           ImageProvider? imageProvider;
                           if (user.photoUrl.isNotEmpty) {
-                            if (user.photoUrl.startsWith("http")) {
-                              imageProvider = NetworkImage(user.photoUrl);
-                            } else {
-                              imageProvider = FileImage(File(user.photoUrl));
-                            }
+                            imageProvider = user.photoUrl.startsWith("http")
+                                ? NetworkImage(user.photoUrl)
+                                : FileImage(File(user.photoUrl));
                           }
 
                           return ListTile(
@@ -168,39 +173,41 @@ class _AllUsersState extends State<AllUsers> {
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit_note,
-                                    color: Colors.green,
-                                    size: 24,
+                                if (widget.canEdit)
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit_note,
+                                      color: Colors.green,
+                                      size: 24,
+                                    ),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) =>
+                                            EditUserDialog(user: user),
+                                      );
+                                    },
                                   ),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => EditUserDialog(user: user),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_forever_rounded,
-                                    color: Colors.red,
-                                    size: 24,
+                                if (widget.canDelete)
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_forever_rounded,
+                                      color: Colors.red,
+                                      size: 24,
+                                    ),
+                                    onPressed: () async {
+                                      final confirmed = await confirmDeleteUser(context);
+                                      if (confirmed == true) {
+                                        context.read<UserCubit>().deleteUser(user.id);
+                                      }
+                                    },
                                   ),
-                                  onPressed: () async {
-                                    final confirmed = await confirmDeleteUser(context);
-                                    if (confirmed == true) {
-                                      context.read<UserCubit>().deleteUser(user.id);
-                                    }
-                                  },
-                                ),
                               ],
                             ),
                           );
                         },
                       ),
               )
-
             ],
           );
         }

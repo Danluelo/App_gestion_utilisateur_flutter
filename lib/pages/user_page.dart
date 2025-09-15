@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/pages/drawer.dart';
-// import 'package:my_app/pages/screen/drawer.dart';
+import 'package:my_app/presentation/widget/all_user.dart';
 
 class UserPage extends StatelessWidget {
   const UserPage({super.key});
@@ -18,10 +18,11 @@ class UserPage extends StatelessWidget {
         email: user?.email,
         role: "Utilisateur",
       ),
-      body: const Center(
-        child: Text(
-          "Bienvenue Utilisateur 🙋",
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: AllUsers(
+          canEdit: false,   // utilisateur ne peut pas modifier
+          canDelete: false, // utilisateur ne peut pas supprimer
         ),
       ),
     );
