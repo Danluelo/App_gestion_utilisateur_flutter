@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:my_app/data/message_api.dart';
-import 'package:my_app/model/messagerieModel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
+import 'package:my_app/utils/firestore_utils.dart'; // <-- import utilitaire
 
 class ChatScreen extends StatefulWidget {
   final String otherUserEmail;
@@ -17,32 +17,44 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final user = FirebaseAuth.instance.currentUser;
   final uuid = const Uuid();
-
-  late Future<List<Message>> _messagesFuture;
+  final CollectionReference messagesRef =
+      FirebaseFirestore.instance.collection('messages');
 
   @override
   void initState() {
     super.initState();
-    _messagesFuture = MessageApi.getMessagesFor(user!.email!, widget.otherUserEmail);
+    updateMessagesWithParticipants(); // <-- mise à jour automatique
+  }
+
+  // Stream pour récupérer tous les messages où l'utilisateur actuel est participant
+  Stream<QuerySnapshot> _messageStream() {
+    return messagesRef
+        .where('participants', arrayContains: user!.email!)
+        .orderBy('timestamp', descending: true)
+        .snapshots();
   }
 
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
-    final message = Message(
-      id: uuid.v4(),
-      senderEmail: user!.email!,
-      receiverEmail: widget.otherUserEmail,
-      content: _controller.text.trim(),
-      timestamp: DateTime.now(),
-    );
+    final message = {
+      'id': uuid.v4(),
+      'senderEmail': user!.email!,
+      'receiverEmail': widget.otherUserEmail,
+      'participants': [user!.email!, widget.otherUserEmail],
+      'content': _controller.text.trim(),
+      'timestamp': FieldValue.serverTimestamp(),
+    };
 
-    await MessageApi.sendMessage(message);
-
-    _controller.clear();
-    setState(() {
-      _messagesFuture = MessageApi.getMessagesFor(user!.email!, widget.otherUserEmail);
-    });
+    try {
+      await messagesRef.add(message);
+      _controller.clear();
+    } catch (e) {
+      print("Erreur envoi message: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Impossible d’envoyer le message")),
+      );
+    }
   }
 
   @override
@@ -52,28 +64,49 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: FutureBuilder<List<Message>>(
-              future: _messagesFuture,
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _messageStream(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text("Erreur: ${snapshot.error}"));
+                } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("Pas de messages pour l’instant"));
+                }
 
-                final messages = snapshot.data!;
+                final docs = snapshot.data!.docs;
+
+                // Filtrer uniquement les messages entre user et otherUserEmail
+                final filteredMessages = docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final participants = List<String>.from(data['participants'] ?? []);
+                  return participants.contains(widget.otherUserEmail);
+                }).toList();
+
                 return ListView.builder(
-                  reverse: false,
-                  itemCount: messages.length,
+                  reverse: true,
+                  itemCount: filteredMessages.length,
                   itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    final isMe = msg.senderEmail == user!.email;
+                    final data =
+                        filteredMessages[index].data() as Map<String, dynamic>;
+                    final isMe = data['senderEmail'] == user!.email!;
                     return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 5, horizontal: 10),
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: isMe ? Colors.green : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(msg.content, style: TextStyle(color: isMe ? Colors.white : Colors.black)),
+                        child: Text(
+                          data['content'] ?? '',
+                          style: TextStyle(
+                              color: isMe ? Colors.white : Colors.black),
+                        ),
                       ),
                     );
                   },
@@ -88,7 +121,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(hintText: "Écrire un message"),
+                    decoration:
+                        const InputDecoration(hintText: "Écrire un message"),
                   ),
                 ),
                 IconButton(icon: const Icon(Icons.send), onPressed: _sendMessage),
