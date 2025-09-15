@@ -8,7 +8,9 @@ import 'package:my_app/service/edit_user_dialog.dart';
 import 'package:my_app/service/delete_user_confirm.dart';
 
 class AllUsers extends StatefulWidget {
-  const AllUsers({super.key});
+  final bool canDelete; // nouveau paramètre
+
+  const AllUsers({super.key, this.canDelete = true}); // true par défaut (superadmin)
 
   @override
   State<AllUsers> createState() => _AllUsersState();
@@ -26,10 +28,8 @@ class _AllUsersState extends State<AllUsers> {
         }
 
         if (state is UserError) {
-          final isNetwork =
-              state.message.contains("network") || state.message.contains("host");
-          final msg =
-              isNetwork ? "Problème de connexion internet 🚫" : state.message;
+          final isNetwork = state.message.contains("network") || state.message.contains("host");
+          final msg = isNetwork ? "Problème de connexion internet 🚫" : state.message;
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -39,11 +39,7 @@ class _AllUsersState extends State<AllUsers> {
                 Text(
                   msg,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.red,
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.red),
                 ),
                 const SizedBox(height: 15),
                 ElevatedButton.icon(
@@ -65,9 +61,7 @@ class _AllUsersState extends State<AllUsers> {
             final name = user.name.toLowerCase();
             final age = user.age.toString();
             final code = user.code.toLowerCase();
-            return name.contains(_searchQuery) ||
-                age.contains(_searchQuery) ||
-                code.contains(_searchQuery);
+            return name.contains(_searchQuery) || age.contains(_searchQuery) || code.contains(_searchQuery);
           }).toList();
 
           return Column(
@@ -78,9 +72,7 @@ class _AllUsersState extends State<AllUsers> {
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search),
                     hintText: "Rechercher un utilisateur...",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -89,17 +81,17 @@ class _AllUsersState extends State<AllUsers> {
                   },
                 ),
               ),
-               Expanded(
+              Expanded(
                 child: users.isEmpty
                     ? const Center(child: Text("Aucun utilisateur trouvé"))
                     : ListView.separated(
                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
                         itemCount: users.length,
                         separatorBuilder: (context, index) => const Divider(
-                          color: Color.fromARGB(255, 234, 234, 234),  // ligne grise
+                          color: Color.fromARGB(255, 234, 234, 234),
                           thickness: 0.8,
-                          indent: 12, // marge à gauche
-                          endIndent: 12, // marge à droite
+                          indent: 12,
+                          endIndent: 12,
                         ),
                         itemBuilder: (context, index) {
                           final user = users[index];
@@ -115,8 +107,7 @@ class _AllUsersState extends State<AllUsers> {
 
                           return ListTile(
                             dense: true,
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             leading: CircleAvatar(
                               radius: 26,
                               backgroundColor: Colors.grey.shade300,
@@ -124,56 +115,25 @@ class _AllUsersState extends State<AllUsers> {
                               child: imageProvider == null
                                   ? Text(
                                       user.name.isNotEmpty
-                                          ? user.name
-                                              .trim()
-                                              .split(" ")
-                                              .take(2)
-                                              .map((e) => e[0].toUpperCase())
-                                              .join()
+                                          ? user.name.trim().split(" ").take(2).map((e) => e[0].toUpperCase()).join()
                                           : "?",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                                     )
                                   : null,
                             ),
-                            title: Text(
-                              user.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                              ),
-                            ),
+                            title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Âge : ${user.age}",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                Text(
-                                  "Code : ${user.code}",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.blue,
-                                  ),
-                                ),
+                                Text("Âge : ${user.age}", style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                                Text("Code : ${user.code}", style: const TextStyle(fontSize: 14, color: Colors.blue)),
                               ],
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(
-                                    Icons.edit_note,
-                                    color: Colors.green,
-                                    size: 24,
-                                  ),
+                                  icon: const Icon(Icons.edit_note, color: Colors.green, size: 24),
                                   onPressed: () {
                                     showDialog(
                                       context: context,
@@ -181,26 +141,22 @@ class _AllUsersState extends State<AllUsers> {
                                     );
                                   },
                                 ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_forever_rounded,
-                                    color: Colors.red,
-                                    size: 24,
+                                if (widget.canDelete)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 24),
+                                    onPressed: () async {
+                                      final confirmed = await confirmDeleteUser(context);
+                                      if (confirmed == true) {
+                                        context.read<UserCubit>().deleteUser(user.id);
+                                      }
+                                    },
                                   ),
-                                  onPressed: () async {
-                                    final confirmed = await confirmDeleteUser(context);
-                                    if (confirmed == true) {
-                                      context.read<UserCubit>().deleteUser(user.id);
-                                    }
-                                  },
-                                ),
                               ],
                             ),
                           );
                         },
                       ),
-              )
-
+              ),
             ],
           );
         }
