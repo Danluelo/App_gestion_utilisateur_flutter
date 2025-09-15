@@ -165,6 +165,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     age: age,
                     photoUrl: photoUrl ?? "",
                     code: generatedCode,
+                    role: "user", // rôle par défaut
                   );
 
                   debugPrint("✅ Code généré : $generatedCode");

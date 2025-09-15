@@ -133,6 +133,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
               age: updatedAge,
               photoUrl: finalPhotoPath,
               code: updatedCode,
+              role: widget.user.role, // conserver le rôle existant
             );
 
             context.read<UserCubit>().updateUser(updatedUser);

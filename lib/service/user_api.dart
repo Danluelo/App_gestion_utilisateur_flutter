@@ -24,6 +24,7 @@ class UserApi {
           age: int.parse(fields['age']['integerValue']),
           photoUrl: fields['photoUrl']?['stringValue'] ?? "",
           code: fields['code']?['stringValue'] ?? User.generateCode(fields['name']['stringValue'], int.parse(fields['age']['integerValue'])),
+          role: fields['role']?['stringValue'] ?? "user", // rôle par défaut = "user"
         );
       }).toList();
     } else {
