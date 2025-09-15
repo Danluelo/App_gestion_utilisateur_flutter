@@ -1,4 +1,4 @@
-import 'dart:io';
+ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,9 +8,9 @@ import 'package:my_app/cubit/user_cubit.dart';
 import 'package:my_app/model/userModel.dart';
 
 class EditUserDialog extends StatefulWidget {
-  final User user;
+  final User? user; // nullable pour pouvoir ajouter un nouvel utilisateur
 
-  const EditUserDialog({super.key, required this.user});
+  const EditUserDialog({super.key, this.user});
 
   @override
   State<EditUserDialog> createState() => _EditUserDialogState();
@@ -24,8 +24,9 @@ class _EditUserDialogState extends State<EditUserDialog> {
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.user.name);
-    ageController = TextEditingController(text: widget.user.age.toString());
+    nameController = TextEditingController(text: widget.user?.name ?? "");
+    ageController =
+        TextEditingController(text: widget.user?.age.toString() ?? "");
   }
 
   @override
@@ -54,11 +55,13 @@ class _EditUserDialogState extends State<EditUserDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.user != null;
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        "Modifier un utilisateur",
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+      title: Text(
+        isEditing ? "Modifier un utilisateur" : "Ajouter un utilisateur",
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -69,10 +72,11 @@ class _EditUserDialogState extends State<EditUserDialog> {
               radius: 40,
               backgroundImage: _newPhotoPath != null
                   ? FileImage(File(_newPhotoPath!))
-                  : (widget.user.photoUrl.isNotEmpty
-                      ? FileImage(File(widget.user.photoUrl))
+                  : (widget.user?.photoUrl.isNotEmpty ?? false
+                      ? FileImage(File(widget.user!.photoUrl))
                       : null),
-              child: (_newPhotoPath == null && widget.user.photoUrl.isEmpty)
+              child: (_newPhotoPath == null &&
+                      (widget.user?.photoUrl.isEmpty ?? true))
                   ? const Icon(Icons.camera_alt, size: 32, color: Colors.white)
                   : null,
             ),
@@ -107,39 +111,37 @@ class _EditUserDialogState extends State<EditUserDialog> {
             foregroundColor: Colors.white,
           ),
           onPressed: () async {
-            final updatedName = nameController.text.trim();
-            final updatedAge = int.tryParse(ageController.text) ?? widget.user.age;
+            final name = nameController.text.trim();
+            final age = int.tryParse(ageController.text) ?? 0;
 
-            // Recalcul du code
-            final updatedCode = User.generateCode(updatedName, updatedAge);
-
-            String finalPhotoPath = widget.user.photoUrl;
-
-            if (_newPhotoPath != null) {
-              // Supprimer l’ancienne photo si elle existe et est locale
-              if (finalPhotoPath.isNotEmpty && await File(finalPhotoPath).exists()) {
-                try {
-                  await File(finalPhotoPath).delete();
-                } catch (e) {
-                  debugPrint("Erreur suppression ancienne photo: $e");
-                }
-              }
-              finalPhotoPath = _newPhotoPath!;
+            if (name.isEmpty || age <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Nom et âge valides requis")),
+              );
+              return;
             }
 
-            final updatedUser = User(
-              id: widget.user.id,
-              name: updatedName,
-              age: updatedAge,
-              photoUrl: finalPhotoPath,
-              code: updatedCode,
-              role: widget.user.role, // conserver le rôle existant
+            final code = User.generateCode(name, age);
+            String photoPath = _newPhotoPath ?? widget.user?.photoUrl ?? "";
+
+            final userToSave = User(
+              id: widget.user?.id ?? "", // id vide pour nouvel utilisateur
+              name: name,
+              age: age,
+              photoUrl: photoPath,
+              code: code,
+              role: widget.user?.role ?? "user", // rôle par défaut si ajout
             );
 
-            context.read<UserCubit>().updateUser(updatedUser);
+            if (isEditing) {
+              context.read<UserCubit>().updateUser(userToSave);
+            } else {
+              context.read<UserCubit>().addUser(userToSave);
+            }
+
             Navigator.pop(context);
           },
-          child: const Text("Enregistrer"),
+          child: Text(isEditing ? "Enregistrer" : "Ajouter"),
         ),
       ],
     );
