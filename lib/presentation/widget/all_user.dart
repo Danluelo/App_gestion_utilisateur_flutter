@@ -6,6 +6,8 @@ import 'package:my_app/cubit/user_cubit.dart';
 import 'package:my_app/cubit/user_state.dart';
 import 'package:my_app/service/edit_user_dialog.dart';
 import 'package:my_app/service/delete_user_confirm.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:my_app/model/userModel.dart';
 
 class AllUsers extends StatefulWidget {
   final bool canEdit;
@@ -13,8 +15,8 @@ class AllUsers extends StatefulWidget {
 
   const AllUsers({
     super.key,
-    this.canEdit = true,   // par défaut superadmin/admin peuvent modifier
-    this.canDelete = true, // par défaut superadmin peut supprimer
+    this.canEdit = true,
+    this.canDelete = true,
   });
 
   @override
@@ -100,7 +102,8 @@ class _AllUsersState extends State<AllUsers> {
                 child: users.isEmpty
                     ? const Center(child: Text("Aucun utilisateur trouvé"))
                     : ListView.separated(
-                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 5, horizontal: 8),
                         itemCount: users.length,
                         separatorBuilder: (context, index) => const Divider(
                           color: Color.fromARGB(255, 234, 234, 234),
@@ -120,8 +123,8 @@ class _AllUsersState extends State<AllUsers> {
 
                           return ListTile(
                             dense: true,
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             leading: CircleAvatar(
                               radius: 26,
                               backgroundColor: Colors.grey.shade300,
@@ -196,9 +199,12 @@ class _AllUsersState extends State<AllUsers> {
                                       size: 24,
                                     ),
                                     onPressed: () async {
-                                      final confirmed = await confirmDeleteUser(context);
+                                      final confirmed =
+                                          await confirmDeleteUser(context);
                                       if (confirmed == true) {
-                                        context.read<UserCubit>().deleteUser(user.id);
+                                        context
+                                            .read<UserCubit>()
+                                            .deleteUser(user.id);
                                       }
                                     },
                                   ),

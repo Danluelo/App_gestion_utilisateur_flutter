@@ -133,10 +133,6 @@ class _AddUserDialogState extends State<AddUserDialog> {
               ),
               onChanged: (_) => setState(() {}),
             ),
-            
-
-            /// 👇 Avatar
-            
           ],
         ),
       ),
@@ -156,7 +152,6 @@ class _AddUserDialogState extends State<AddUserDialog> {
               ? () {
                   final name = ctrName.text.trim();
                   final age = int.tryParse(ctrAge.text) ?? 0;
-
                   final generatedCode = User.generateCode(name, age);
 
                   final user = User(
@@ -165,7 +160,8 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     age: age,
                     photoUrl: photoUrl ?? "",
                     code: generatedCode,
-                    role: "user", // rôle par défaut
+                    role: "user",
+                    email: "" // rôle par défaut
                   );
 
                   debugPrint("✅ Code généré : $generatedCode");

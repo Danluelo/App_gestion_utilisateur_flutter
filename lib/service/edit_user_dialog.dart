@@ -130,7 +130,8 @@ class _EditUserDialogState extends State<EditUserDialog> {
               age: age,
               photoUrl: photoPath,
               code: code,
-              role: widget.user?.role ?? "user", // rôle par défaut si ajout
+              role: widget.user?.role ?? "user", 
+              email: ""// rôle par défaut si ajout
             );
 
             if (isEditing) {
