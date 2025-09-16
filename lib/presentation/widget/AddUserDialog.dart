@@ -1,83 +1,73 @@
- import 'dart:io';
+ // lib/presentation/widget/addUserDialog.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/cubit/user_cubit.dart';
 import 'package:my_app/model/userModel.dart';
-import 'package:my_app/service/storage_service.dart';
 
 class AddUserDialog extends StatefulWidget {
-  const AddUserDialog({super.key});
+  final String currentUserRole; // rôle du user connecté
+
+  const AddUserDialog({super.key, required this.currentUserRole});
 
   @override
   State<AddUserDialog> createState() => _AddUserDialogState();
 }
 
 class _AddUserDialogState extends State<AddUserDialog> {
-  final ctrName = TextEditingController();
-  final ctrAge = TextEditingController();
+  final TextEditingController ctrName = TextEditingController();
+  final TextEditingController ctrAge = TextEditingController();
+  File? _pickedImage;
   String? photoUrl;
-  bool isUploading = false;
+
+  late String selectedRole;
 
   @override
-  void dispose() {
-    ctrName.dispose();
-    ctrAge.dispose();
-    super.dispose();
-  }
-
-  /// 📸 Sélectionner photo (caméra ou galerie)
-  Future<void> pickPhoto() async {
-    final picker = ImagePicker();
-
-    final source = await showDialog<ImageSource>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Choisir une image"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text("Galerie"),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text("Caméra"),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source == null) return;
-
-    final picked = await picker.pickImage(source: source, imageQuality: 70);
-    if (picked != null) {
-      setState(() => isUploading = true);
-      try {
-        // 🔹 Upload vers Firebase Storage
-        final url = await StorageService.uploadUserPhoto(picked);
-        setState(() => photoUrl = url);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("⚠️ Erreur upload photo : $e")),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => isUploading = false);
-      }
-    }
+  void initState() {
+    super.initState();
+    // Rôle par défaut pour le nouveau user
+    selectedRole = "user";
   }
 
   bool get isFormValid =>
       ctrName.text.trim().isNotEmpty && (int.tryParse(ctrAge.text) ?? 0) > 0;
 
+  Future<void> _pickImage() async {
+    final pickedImage = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 150,
+      maxHeight: 150,
+    );
+
+    if (pickedImage != null) {
+      setState(() {
+        _pickedImage = File(pickedImage.path);
+      });
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final pickedImage = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 150,
+      maxHeight: 150,
+    );
+
+    if (pickedImage != null) {
+      setState(() {
+        _pickedImage = File(pickedImage.path);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Liste des rôles possibles selon le rôle du user connecté
+    final roleOptions = widget.currentUserRole == "superadmin"
+        ? ["superadmin", "admin", "user"]
+        : ["user"]; // admin ne peut créer que des user
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
@@ -88,91 +78,119 @@ class _AddUserDialogState extends State<AddUserDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            InkWell(
-              onTap: pickPhoto,
-              child: CircleAvatar(
-                radius: 40,
-                backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-                    ? (photoUrl!.startsWith("http")
-                        ? NetworkImage(photoUrl!) as ImageProvider
-                        : FileImage(File(photoUrl!)))
-                    : null,
-                child: isUploading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : (photoUrl == null || photoUrl!.isEmpty)
-                        ? const Icon(Icons.person, size: 40)
-                        : null,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: pickPhoto,
-              icon: const Icon(Icons.photo),
-              label: const Text("Choisir une photo"),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: ctrName,
-              decoration: InputDecoration(
-                labelText: "Nom",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+            // Photo de profil
+            if (widget.currentUserRole == "superadmin") ...[
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => SafeArea(
+                      child: Wrap(
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.photo_library),
+                            title: const Text('Galerie'),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _pickImage();
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.camera_alt),
+                            title: const Text('Appareil photo'),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _takePhoto();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: _pickedImage != null
+                      ? FileImage(_pickedImage!)
+                      : null,
+                  child: _pickedImage == null
+                      ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
+                      : null,
                 ),
               ),
-              onChanged: (_) => setState(() {}),
+              const SizedBox(height: 10),
+              Text(
+                _pickedImage != null 
+                  ? 'Photo sélectionnée' 
+                  : 'Appuyez pour ajouter une photo',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 15),
+            ],
+            
+            // Nom
+            TextField(
+              controller: ctrName,
+              decoration: const InputDecoration(labelText: "Nom"),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
+            
+            // Âge
             TextField(
               controller: ctrAge,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Âge",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(labelText: "Âge"),
+            ),
+            const SizedBox(height: 10),
+            
+            // Dropdown rôle
+            DropdownButtonFormField<String>(
+              value: selectedRole,
+              decoration: const InputDecoration(labelText: "Rôle"),
+              items: roleOptions
+                  .map((role) => DropdownMenuItem(
+                        value: role,
+                        child: Text(role.toUpperCase()),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => selectedRole = value);
+              },
             ),
           ],
         ),
       ),
-      actionsPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       actions: [
         OutlinedButton(
           onPressed: () => Navigator.pop(context),
           child: const Text("Annuler"),
         ),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: isFormValid
-              ? () {
-                  final name = ctrName.text.trim();
-                  final age = int.tryParse(ctrAge.text) ?? 0;
-                  final generatedCode = User.generateCode(name, age);
+        // Correction simple dans AddUserDialog.dart
+ElevatedButton(
+  onPressed: isFormValid
+      ? () {
+          final name = ctrName.text.trim();
+          final age = int.tryParse(ctrAge.text) ?? 0;
+          final generatedCode = User.generateCode(name, age);
 
-                  final user = User(
-                    id: "", // Firestore va générer un ID
-                    name: name,
-                    age: age,
-                    photoUrl: photoUrl ?? "",
-                    code: generatedCode,
-                    role: "user",
-                    email: "" // rôle par défaut
-                  );
+          final user = User(
+            id: "",
+            name: name,
+            age: age,
+            photoUrl: _pickedImage != null ? _pickedImage!.path : "",
+            code: generatedCode,
+            role: selectedRole,
+            email: "",
+          );
 
-                  debugPrint("✅ Code généré : $generatedCode");
-
-                  context.read<UserCubit>().addUser(user);
-                  Navigator.pop(context);
-                }
-              : null,
-          icon: const Icon(Icons.check),
-          label: const Text("Ajouter"),
-        ),
+          // ✅ Correction: supprimer le paramètre image
+          context.read<UserCubit>().addUser(user);
+          Navigator.pop(context);
+        }
+      : null,
+  child: const Text("Ajouter"),
+),
       ],
     );
   }

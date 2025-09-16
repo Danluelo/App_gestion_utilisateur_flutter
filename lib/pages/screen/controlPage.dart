@@ -1,16 +1,30 @@
+ // lib/pages/screen/controle_page.dart
 import 'package:flutter/material.dart';
-import 'package:my_app/presentation/widget/AddUserDialog.dart';
+import 'package:my_app/presentation/widget/addUserDialog.dart';
 import 'package:my_app/presentation/widget/all_user.dart';
 import 'package:my_app/presentation/widget/scan_page.dart';
 
-/// Page principale avec onglets (ajout, liste, paramètres)
 class ControlePage extends StatelessWidget {
-  const ControlePage({super.key});
+  final String currentUserRole;
+
+  const ControlePage({super.key, required this.currentUserRole});
+
+  void _showAddUserDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        // ❌ Ne pas utiliser const ici, rôle dynamique
+        return AddUserDialog(
+          currentUserRole: currentUserRole, // ✅ rôle transmis dynamiquement
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4, // ✅ Nombre d’onglets
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.green,
@@ -28,21 +42,20 @@ class ControlePage extends StatelessWidget {
             unselectedLabelColor: Colors.white70,
             labelStyle: TextStyle(fontWeight: FontWeight.bold),
             tabs: [
-              Tab(icon: Icon(Icons.add)), // Ajouter
-              Tab(icon: Icon(Icons.list)), // Liste
-              Tab(icon: Icon(Icons.qr_code)), // Liste
-              Tab(icon: Icon(Icons.settings)), // Paramètres
+              Tab(icon: Icon(Icons.add)),
+              Tab(icon: Icon(Icons.list)),
+              Tab(icon: Icon(Icons.qr_code)),
+              Tab(icon: Icon(Icons.settings)),
             ],
           ),
         ),
-
         body: TabBarView(
           children: [
-            // 🔹 Onglet 1 : bouton pour ouvrir une popup d’ajout utilisateur
             Center(
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
@@ -50,12 +63,7 @@ class ControlePage extends StatelessWidget {
                     side: const BorderSide(color: Colors.green, width: 2),
                   ),
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const AddUserDialog(), // ✅ plus besoin de onUserAdded
-                  );
-                },
+                onPressed: () => _showAddUserDialog(context),
                 icon: const Icon(Icons.person_add, size: 22),
                 label: const Text(
                   "Ajouter un utilisateur",
@@ -63,18 +71,15 @@ class ControlePage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // 🔹 Onglet 2 : liste des utilisateurs
             const AllUsers(),
-
             const ScanPage(),
-
-            // 🔹 Onglet 3 : paramètres
-
             const Center(
               child: Text(
                 "⚙️ Paramètres (en développement)",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black54),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black54),
               ),
             ),
           ],

@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/pages/drawer.dart';
 import 'package:my_app/presentation/widget/AddUserDialog.dart';
@@ -25,8 +25,12 @@ class SuperAdminPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Ici tu peux appeler ton dialog pour ajouter un nouvel utilisateur
-          showDialog(context: context, builder: (context) => AddUserDialog());
+          showDialog(
+            context: context,
+            builder: (context) => const AddUserDialog(
+              currentUserRole: "superadmin", // ✅ rôle explicite
+            ),
+          );
         },
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),

@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:my_app/cubit/user_cubit.dart';
 import 'package:my_app/pages/welcom.dart';
 import 'package:my_app/repository/userRepo.dart';
-import 'package:my_app/screens/constrolPage.dart';
+// import 'package:my_app/screens/constrolPage.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {

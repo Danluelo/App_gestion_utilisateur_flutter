@@ -53,9 +53,15 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   void _showAddUserDialog() {
+    if (role == null) return;
     showDialog(
       context: context,
-      builder: (_) => const AddUserDialog(),
+      builder: (context) {
+        // ❌ Ne pas utiliser `const` ici, rôle dynamique
+        return AddUserDialog(
+          currentUserRole: role!, // ✅ rôle transmis dynamiquement
+        );
+      },
     );
   }
 
@@ -68,9 +74,8 @@ class _AdminPageState extends State<AdminPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChatScreen(
-          otherUserEmail:
-              "user@example.com", // ⚠️ à remplacer par l’email du user choisi
+        builder: (_) => const ChatScreen(
+          otherUserEmail: "user@example.com",
         ),
       ),
     );
@@ -80,7 +85,8 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
@@ -100,11 +106,9 @@ class _AdminPageState extends State<AdminPage> {
       drawer: CustomDrawer(email: email, role: role),
       body: Column(
         children: [
-          // 🔹 Bouton message uniquement si rôle admin
-          if (!isLoading && role == "admin")
+          if (role == "admin")
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(8.0),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -118,15 +122,10 @@ class _AdminPageState extends State<AdminPage> {
                 ),
               ),
             ),
-
-          // 🔹 Liste des utilisateurs en temps réel (comme SuperAdmin)
-          const Expanded(
+          Expanded(
             child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: AllUsers(
-                canEdit: true,
-                canDelete: false,
-              ),
+              padding: const EdgeInsets.all(8.0),
+              child: AllUsers(canEdit: true, canDelete: false),
             ),
           ),
         ],
